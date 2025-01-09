@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: configmap-env-var  # Название Deployment (группы подов) для удобства управления.
+  labels:
+    app: configmap-env-var  # Метка, которая описывает приложение. Используется для идентификации Deployment.
+spec:
+  replicas: 3  # Указывается количество реплик (подов), которые нужно развернуть.
+  selector:
+    matchLabels:
+      app: configmap-env-var  # Селектор для сопоставления подов с этим Deployment.
+  template:  # Шаблон для создания подов.
+    metadata:
+      labels:
+        app: configmap-env-var  # Метки, присваиваемые каждому создаваемому поду.
+    spec:
+      containers:
+        - name: alpine  # Имя контейнера для идентификации.
+          image: alpine:3  # Используемый образ контейнера (в данном случае, Alpine Linux версии 3).
+          env:  # Определяет переменные окружения для контейнера.
+            - name: FRUITS  # Название переменной окружения, доступной внутри контейнера.
+              valueFrom:  # Значение переменной берется из внешнего источника.
+                configMapKeyRef:  # Используется `ConfigMap` как источник значений.
+                  key: fruits  # Ключ из ConfigMap, значение которого передается в переменную.
+                  name: fruits  # Название `ConfigMap`, в котором содержится ключ `fruits`.
+          command:  # Команда, которая будет выполнена при запуске контейнера.
+            - /bin/sh  # Запускаем shell.
+            - -c  # Указываем, что нужно выполнить одну строку команд.
+            - while true; do echo "$(date) The basket is full of $FRUITS";sleep 10; done;
+          ports:
+            - containerPort: 80  # Порт, который слушает контейнер (для внешних подключений).
