@@ -1,0 +1,39 @@
+apiVersion: apps/v1  # Определяет версию API, используемую для создания объекта Deployment.
+kind: Deployment      # Указывает, что мы создаем объект типа Deployment.
+metadata:
+  name: configmap-two-containers  # Задает имя для deployment.
+  labels:
+    app: configmap-two-containers  # Устанавливает метку (label) для идентификации приложения.
+spec:
+  replicas: 3  # Определяет количество реплик (копий) приложения, которое должно быть запущено.
+  selector:
+    matchLabels:
+      app: configmap-two-containers  # Устанавливает селектор, чтобы контроллер мог находить поды.
+  template:
+    metadata:
+      labels:
+        app: configmap-two-containers  # Метки для подов, создаваемых этим deployment.
+    spec:
+      volumes:  # Определяет список томов, доступных для контейнеров в поде.
+        - name: shared-data  # Имя тома для данных, которые будут разделяться между контейнерами.
+          emptyDir: { }  # Создаёт пустой том, который будет удалён, когда под будет удалён.
+        - name: config-volume  # Имя тома для хранения данных из ConfigMap.
+          configMap:
+            name: color  # Указывает на ConfigMap с именем "color", который будет смонтирован как том.
+      containers:  # Определения контейнеров в поде.
+        - name: nginx  # Имя контейнера с Nginx.
+          image: nginx  # Образ контейнера, который будет использован.
+          volumeMounts:  # Определяет тома, которые будут смонтированы в контейнер.
+            - mountPath: /usr/share/nginx/html  # Путь внутри контейнера, куда будет смонтирован том.
+              name: shared-data  # Имя тома, который будет смонтирован.
+        - name: alpine  # Имя контейнера с Alpine Linux.
+          image: alpine:3  # Образ контейнера, который будет использован (версия 3).
+          volumeMounts:  # Определяет тома, которые будут смонтированы в контейнер.
+            - mountPath: /pod-data  # Путь внутри контейнера, куда будет смонтирован общий том.
+              name: shared-data  # Имя тома, который будет смонтирован.
+            - mountPath: /etc/config  # Путь, где будет доступен ConfigMap.
+              name: config-volume  # Имя тома ConfigMap, который будет смонтирован.
+          command:  # Определяет команду, которая будет выполнена при запуске контейнера.
+            - /bin/sh  # Используемый интерпретатор для выполнения команд.
+            - -c  # Указывает, что следующая строка будет командой, которую нужно выполнить.
+            - while true; do echo "$(date) My preferred color is $(cat /etc/config/color)" > /pod-data/index.html;sleep 10; done;
